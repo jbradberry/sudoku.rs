@@ -108,6 +108,23 @@ fn cover(header: (String, u8, u8),
 }
 
 
+fn uncover(header: (String, u8, u8),
+           removals: &HashMap<(u8, u8, u8), Vec<(String, u8, u8)>>,
+           constraints: &mut HashMap<(String, u8, u8),
+                                     HashSet<(u8, u8, u8)>>) {
+    for (choice, headers) in removals.iter() {
+        constraints.entry(header.clone())
+                   .or_insert(HashSet::new())
+                   .insert(choice.clone());
+        for other_header in headers {
+            constraints.entry(other_header.clone())
+                       .or_insert(HashSet::new())
+                       .insert(choice.clone());
+        }
+    }
+}
+
+
 fn main() {
     let input = "...84...9\n..1.....5\n8...2146.\n7.8....9.\n.........\n.5....3.1\n.2491...7\n9.....5..\n3...84...\n";
     let (state, constraints) = unpack(&input);
