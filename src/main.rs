@@ -3,7 +3,7 @@ use std::collections::{HashMap,HashSet};
 
 
 fn unpack(display: &str) -> (Vec<(usize, usize, u8)>,
-                             HashMap<(&str, u8, u8), HashSet<(u8, u8, u8)>>) {
+                             HashMap<(String, u8, u8), HashSet<(u8, u8, u8)>>) {
     let mut state = Vec::new();
     let mut solved_constraints = HashSet::new();
     let mut constraints = HashMap::new();
@@ -22,10 +22,10 @@ fn unpack(display: &str) -> (Vec<(usize, usize, u8)>,
             let b = 3 * (row / 3) + (col / 3);
 
             state.push((row, col, value));
-            solved_constraints.insert(("square", row as u8, col as u8));
-            solved_constraints.insert(("row", row as u8, value));
-            solved_constraints.insert(("column", col as u8, value));
-            solved_constraints.insert(("box", b as u8, value));
+            solved_constraints.insert((String::from("square"), row as u8, col as u8));
+            solved_constraints.insert((String::from("row"), row as u8, value));
+            solved_constraints.insert((String::from("column"), col as u8, value));
+            solved_constraints.insert((String::from("box"), b as u8, value));
         }
     }
 
@@ -34,16 +34,16 @@ fn unpack(display: &str) -> (Vec<(usize, usize, u8)>,
             for value in 1..10u8 {
                 let choice = (row, col, value);
 
-                let cons_r = ("row", row, value);
+                let cons_r = (String::from("row"), row, value);
                 if solved_constraints.contains(&cons_r) { continue; }
 
-                let cons_c = ("column", col, value);
+                let cons_c = (String::from("column"), col, value);
                 if solved_constraints.contains(&cons_c) { continue; }
 
-                let cons_b = ("box", 3 * (row / 3) + (col / 3), value);
+                let cons_b = (String::from("box"), 3 * (row / 3) + (col / 3), value);
                 if solved_constraints.contains(&cons_b) { continue; }
 
-                let cons_s = ("square", row, col);
+                let cons_s = (String::from("square"), row, col);
                 if solved_constraints.contains(&cons_s) { continue; }
 
                 constraints.entry(cons_r)
@@ -87,19 +87,19 @@ fn pack(state: &Vec<(usize, usize, u8)>) -> Vec<String> {
 }
 
 
-fn cover(header: (&str, u8, u8),
-         mut constraints: &HashMap<(&str, u8, u8),
+fn cover(header: (String, u8, u8),
+         constraints: &mut HashMap<(String, u8, u8),
                                    HashSet<(u8, u8, u8)>>)
-         -> HashMap<(u8, u8, u8), Vec<(&str, u8, u8)>> {
+         -> HashMap<(u8, u8, u8), Vec<(String, u8, u8)>> {
     let column = constraints.remove(&header).unwrap();
 
-    let removals = HashMap::new();
+    let mut removals = HashMap::new();
     for row in column {
-        for (other_header, other_col) in constraints {
+        for (other_header, other_col) in constraints.iter_mut() {
             if other_col.remove(&row) {
                 removals.entry(row)
                         .or_insert(Vec::new())
-                        .push(other_header);
+                        .push(other_header.clone());
             }
         }
     }
