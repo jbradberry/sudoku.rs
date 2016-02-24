@@ -2,7 +2,7 @@ use std::char;
 use std::collections::{HashMap,HashSet};
 
 
-fn unpack(display: &str) -> (Vec<(usize, usize, u8)>,
+fn unpack(display: &str) -> (Vec<(u8, u8, u8)>,
                              HashMap<(String, u8, u8), HashSet<(u8, u8, u8)>>) {
     let mut state = Vec::new();
     let mut solved_constraints = HashSet::new();
@@ -21,7 +21,7 @@ fn unpack(display: &str) -> (Vec<(usize, usize, u8)>,
 
             let b = 3 * (row / 3) + (col / 3);
 
-            state.push((row, col, value));
+            state.push((row as u8, col as u8, value));
             solved_constraints.insert((String::from("square"), row as u8, col as u8));
             solved_constraints.insert((String::from("row"), row as u8, value));
             solved_constraints.insert((String::from("column"), col as u8, value));
@@ -69,11 +69,11 @@ fn unpack(display: &str) -> (Vec<(usize, usize, u8)>,
 }
 
 
-fn pack(state: &Vec<(usize, usize, u8)>) -> Vec<String> {
+fn pack(state: &Vec<(u8, u8, u8)>) -> Vec<String> {
     let mut output = [['.'; 9]; 9];
 
     for &(row, col, value) in state {
-        output[row][col] = match char::from_digit(value as u32, 10) {
+        output[row as usize][col as usize] = match char::from_digit(value as u32, 10) {
             Some(c) => c,
             None    => continue,
         };
@@ -125,7 +125,7 @@ fn uncover(header: &(String, u8, u8),
 }
 
 
-fn solve(state: &mut Vec<(usize, usize, u8)>,
+fn solve(state: &mut Vec<(u8, u8, u8)>,
          constraints: &mut HashMap<(String, u8, u8),
                                    HashSet<(u8, u8, u8)>>)
          -> bool {
@@ -141,6 +141,12 @@ fn solve(state: &mut Vec<(usize, usize, u8)>,
                                             });
 
     let removals = cover(&header, constraints);
+
+    for (row, other_headers) in removals.iter() {
+        state.push(row.clone());
+
+        state.pop();
+    }
 
     uncover(&header, &removals, constraints);
 
