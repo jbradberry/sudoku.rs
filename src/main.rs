@@ -1,3 +1,5 @@
+use std::io;
+use std::io::Read;
 use std::char;
 use std::collections::{HashMap,HashSet};
 
@@ -168,7 +170,12 @@ fn solve(state: &mut Vec<(u8, u8, u8)>,
 
 
 fn main() {
-    let input = "...84...9\n..1.....5\n8...2146.\n7.8....9.\n.........\n.5....3.1\n.2491...7\n9.....5..\n3...84...\n";
+    let mut input = String::new();
+
+    io::stdin().read_to_string(&mut input)
+               .ok()
+               .expect("Failed to read input.");
+
     let (mut state, mut constraints) = unpack(&input);
 
     solve(&mut state, &mut constraints);
