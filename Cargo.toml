@@ -1,0 +1,4 @@
+[package]
+name = "sudoku-rust"
+version = "0.1.0"
+authors = ["Jeff Bradberry <jeff.bradberry@gmail.com>"]
