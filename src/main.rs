@@ -24,10 +24,10 @@ fn unpack(display: &str) -> (Vec<(u8, u8, u8)>,
             let b = 3 * (row / 3) + (col / 3);
 
             state.push((row as u8, col as u8, value));
-            solved_constraints.insert((String::from("square"), row as u8, col as u8));
-            solved_constraints.insert((String::from("row"), row as u8, value));
-            solved_constraints.insert((String::from("column"), col as u8, value));
-            solved_constraints.insert((String::from("box"), b as u8, value));
+            solved_constraints.insert(("square".to_string(), row as u8, col as u8));
+            solved_constraints.insert(("row".to_string(), row as u8, value));
+            solved_constraints.insert(("column".to_string(), col as u8, value));
+            solved_constraints.insert(("box".to_string(), b as u8, value));
         }
     }
 
@@ -36,16 +36,16 @@ fn unpack(display: &str) -> (Vec<(u8, u8, u8)>,
             for value in 1..10u8 {
                 let choice = (row, col, value);
 
-                let cons_r = (String::from("row"), row, value);
+                let cons_r = ("row".to_string(), row, value);
                 if solved_constraints.contains(&cons_r) { continue; }
 
-                let cons_c = (String::from("column"), col, value);
+                let cons_c = ("column".to_string(), col, value);
                 if solved_constraints.contains(&cons_c) { continue; }
 
-                let cons_b = (String::from("box"), 3 * (row / 3) + (col / 3), value);
+                let cons_b = ("box".to_string(), 3 * (row / 3) + (col / 3), value);
                 if solved_constraints.contains(&cons_b) { continue; }
 
-                let cons_s = (String::from("square"), row, col);
+                let cons_s = ("square".to_string(), row, col);
                 if solved_constraints.contains(&cons_s) { continue; }
 
                 constraints.entry(cons_r)
