@@ -87,7 +87,7 @@ fn pack(state: &Vec<(usize, usize, u8)>) -> Vec<String> {
 }
 
 
-fn cover(header: (String, u8, u8),
+fn cover(header: &(String, u8, u8),
          constraints: &mut HashMap<(String, u8, u8),
                                    HashSet<(u8, u8, u8)>>)
          -> HashMap<(u8, u8, u8), Vec<(String, u8, u8)>> {
@@ -108,7 +108,7 @@ fn cover(header: (String, u8, u8),
 }
 
 
-fn uncover(header: (String, u8, u8),
+fn uncover(header: &(String, u8, u8),
            removals: &HashMap<(u8, u8, u8), Vec<(String, u8, u8)>>,
            constraints: &mut HashMap<(String, u8, u8),
                                      HashSet<(u8, u8, u8)>>) {
@@ -125,9 +125,35 @@ fn uncover(header: (String, u8, u8),
 }
 
 
+fn solve(state: &mut Vec<(usize, usize, u8)>,
+         constraints: &mut HashMap<(String, u8, u8),
+                                   HashSet<(u8, u8, u8)>>)
+         -> bool {
+
+    if constraints.is_empty() { return true; }
+
+    let (_count, header) = constraints.iter()
+                                      .fold((100, ("".to_string(), 0, 0)),
+                                            |(c, h_acc), (h, rows)| {
+                                                let count = rows.len();
+                                                if c > count { (count, h.clone()) }
+                                                else { (c, h_acc) }
+                                            });
+
+    let removals = cover(&header, constraints);
+
+    uncover(&header, &removals, constraints);
+
+    false
+}
+
+
 fn main() {
     let input = "...84...9\n..1.....5\n8...2146.\n7.8....9.\n.........\n.5....3.1\n.2491...7\n9.....5..\n3...84...\n";
-    let (state, constraints) = unpack(&input);
+    let (mut state, mut constraints) = unpack(&input);
+
+    solve(&mut state, &mut constraints);
+
     let output = pack(&state);
 
     for line in output {
