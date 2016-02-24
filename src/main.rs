@@ -87,6 +87,27 @@ fn pack(state: &Vec<(usize, usize, u8)>) -> Vec<String> {
 }
 
 
+fn cover(header: (&str, u8, u8),
+         mut constraints: &HashMap<(&str, u8, u8),
+                                   HashSet<(u8, u8, u8)>>)
+         -> HashMap<(u8, u8, u8), Vec<(&str, u8, u8)>> {
+    let column = constraints.remove(&header).unwrap();
+
+    let removals = HashMap::new();
+    for row in column {
+        for (other_header, other_col) in constraints {
+            if other_col.remove(&row) {
+                removals.entry(row)
+                        .or_insert(Vec::new())
+                        .push(other_header);
+            }
+        }
+    }
+
+    removals
+}
+
+
 fn main() {
     let input = "...84...9\n..1.....5\n8...2146.\n7.8....9.\n.........\n.5....3.1\n.2491...7\n9.....5..\n3...84...\n";
     let (state, constraints) = unpack(&input);
