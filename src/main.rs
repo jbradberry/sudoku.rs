@@ -145,6 +145,19 @@ fn solve(state: &mut Vec<(u8, u8, u8)>,
     for (row, other_headers) in removals.iter() {
         state.push(row.clone());
 
+        let mut row_removals = HashMap::new();
+        for h in other_headers.iter() {
+            if constraints.contains_key(h) {
+                row_removals.insert(h, cover(h, constraints));
+            }
+        }
+
+        if solve(state, constraints) { return true; }
+
+        for (h, r) in &row_removals {
+            uncover(h, r, constraints);
+        }
+
         state.pop();
     }
 
