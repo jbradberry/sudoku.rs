@@ -4,8 +4,17 @@ use std::char;
 use std::collections::{HashMap,HashSet};
 
 
+#[derive(Hash, PartialEq, Eq, Copy, Clone)]
+enum Constraint {
+    Square { row: u8, col: u8 },
+    Row { row: u8, value: u8 },
+    Column { col: u8, value: u8 },
+    Block { block: u8, value: u8 },
+}
+
+
 fn unpack(display: &str) -> (Vec<(u8, u8, u8)>,
-                             HashMap<(String, u8, u8), HashSet<(u8, u8, u8)>>) {
+                             HashMap<Constraint, HashSet<(u8, u8, u8)>>) {
     let mut state = Vec::new();
     let mut solved_constraints = HashSet::new();
     let mut constraints = HashMap::new();
@@ -24,10 +33,10 @@ fn unpack(display: &str) -> (Vec<(u8, u8, u8)>,
             let b = 3 * (row / 3) + (col / 3);
 
             state.push((row as u8, col as u8, value));
-            solved_constraints.insert(("square".to_string(), row as u8, col as u8));
-            solved_constraints.insert(("row".to_string(), row as u8, value));
-            solved_constraints.insert(("column".to_string(), col as u8, value));
-            solved_constraints.insert(("box".to_string(), b as u8, value));
+            solved_constraints.insert(Constraint::Square { row: row as u8, col: col as u8 });
+            solved_constraints.insert(Constraint::Row { row: row as u8, value: value });
+            solved_constraints.insert(Constraint::Column { col: col as u8, value: value });
+            solved_constraints.insert(Constraint::Block { block: b as u8, value: value });
         }
     }
 
@@ -36,16 +45,17 @@ fn unpack(display: &str) -> (Vec<(u8, u8, u8)>,
             for value in 1..10u8 {
                 let choice = (row, col, value);
 
-                let cons_r = ("row".to_string(), row, value);
+                let cons_r = Constraint::Row { row: row as u8, value: value };
                 if solved_constraints.contains(&cons_r) { continue; }
 
-                let cons_c = ("column".to_string(), col, value);
+                let cons_c = Constraint::Column { col: col as u8, value: value };
                 if solved_constraints.contains(&cons_c) { continue; }
 
-                let cons_b = ("box".to_string(), 3 * (row / 3) + (col / 3), value);
+                let b = 3 * (row / 3) + (col / 3);
+                let cons_b = Constraint::Block { block: b as u8, value: value };
                 if solved_constraints.contains(&cons_b) { continue; }
 
-                let cons_s = ("square".to_string(), row, col);
+                let cons_s = Constraint::Square { row: row as u8, col: col as u8 };
                 if solved_constraints.contains(&cons_s) { continue; }
 
                 constraints.entry(cons_r)
@@ -89,10 +99,10 @@ fn pack(state: &Vec<(u8, u8, u8)>) -> Vec<String> {
 }
 
 
-fn cover(header: &(String, u8, u8),
-         constraints: &mut HashMap<(String, u8, u8),
+fn cover(header: Constraint,
+         constraints: &mut HashMap<Constraint,
                                    HashSet<(u8, u8, u8)>>)
-         -> HashMap<(u8, u8, u8), Vec<(String, u8, u8)>> {
+         -> HashMap<(u8, u8, u8), Vec<Constraint>> {
     let column = constraints.remove(&header).unwrap();
 
     let mut removals = HashMap::new();
@@ -110,60 +120,63 @@ fn cover(header: &(String, u8, u8),
 }
 
 
-fn uncover(header: &(String, u8, u8),
-           removals: &HashMap<(u8, u8, u8), Vec<(String, u8, u8)>>,
-           constraints: &mut HashMap<(String, u8, u8),
+fn uncover(header: Constraint,
+           removals: &HashMap<(u8, u8, u8), Vec<Constraint>>,
+           constraints: &mut HashMap<Constraint,
                                      HashSet<(u8, u8, u8)>>) {
     for (choice, headers) in removals.iter() {
-        constraints.entry(header.clone())
+        constraints.entry(header)
                    .or_insert(HashSet::new())
-                   .insert(choice.clone());
+                   .insert(*choice);
         for other_header in headers {
-            constraints.entry(other_header.clone())
+            constraints.entry(*other_header)
                        .or_insert(HashSet::new())
-                       .insert(choice.clone());
+                       .insert(*choice);
         }
     }
 }
 
 
+fn most_constrained(constraints: &HashMap<Constraint,
+                                          HashSet<(u8, u8, u8)>>) -> Constraint {
+    let (header, _) = constraints.iter()
+                                 .min_by_key(|x| x.1.len())
+                                 .unwrap();
+    *header
+}
+
+
 fn solve(state: &mut Vec<(u8, u8, u8)>,
-         constraints: &mut HashMap<(String, u8, u8),
+         constraints: &mut HashMap<Constraint,
                                    HashSet<(u8, u8, u8)>>)
          -> bool {
 
     if constraints.is_empty() { return true; }
 
-    let (_count, header) = constraints.iter()
-                                      .fold((100, ("".to_string(), 0, 0)),
-                                            |(c, h_acc), (h, rows)| {
-                                                let count = rows.len();
-                                                if c > count { (count, h.clone()) }
-                                                else { (c, h_acc) }
-                                            });
+    let header = most_constrained(constraints);
 
-    let removals = cover(&header, constraints);
+    let removals = cover(header, constraints);
 
     for (row, other_headers) in removals.iter() {
-        state.push(row.clone());
+        state.push(*row);
 
         let mut row_removals = HashMap::new();
         for h in other_headers.iter() {
             if constraints.contains_key(h) {
-                row_removals.insert(h, cover(h, constraints));
+                row_removals.insert(h, cover(h.clone(), constraints));
             }
         }
 
         if solve(state, constraints) { return true; }
 
         for (h, r) in &row_removals {
-            uncover(h, r, constraints);
+            uncover(**h, r, constraints);
         }
 
         state.pop();
     }
 
-    uncover(&header, &removals, constraints);
+    uncover(header, &removals, constraints);
 
     false
 }
