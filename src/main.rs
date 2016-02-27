@@ -13,8 +13,16 @@ enum Constraint {
 }
 
 
-fn unpack(display: &str) -> (Vec<(u8, u8, u8)>,
-                             HashMap<Constraint, HashSet<(u8, u8, u8)>>) {
+#[derive(Hash, PartialEq, Eq, Copy, Clone)]
+struct SquareChoice {
+    row: u8,
+    col: u8,
+    value: u8,
+}
+
+
+fn unpack(display: &str) -> (Vec<SquareChoice>,
+                             HashMap<Constraint, HashSet<SquareChoice>>) {
     let mut state = Vec::new();
     let mut solved_constraints = HashSet::new();
     let mut constraints = HashMap::new();
@@ -32,7 +40,7 @@ fn unpack(display: &str) -> (Vec<(u8, u8, u8)>,
 
             let b = 3 * (row / 3) + (col / 3);
 
-            state.push((row as u8, col as u8, value));
+            state.push(SquareChoice { row: row as u8, col: col as u8, value: value });
             solved_constraints.insert(Constraint::Square { row: row as u8, col: col as u8 });
             solved_constraints.insert(Constraint::Row { row: row as u8, value: value });
             solved_constraints.insert(Constraint::Column { col: col as u8, value: value });
@@ -43,7 +51,7 @@ fn unpack(display: &str) -> (Vec<(u8, u8, u8)>,
     for row in 0..9u8 {
         for col in 0..9u8 {
             for value in 1..10u8 {
-                let choice = (row, col, value);
+                let choice = SquareChoice { row: row, col: col, value: value };
 
                 let cons_r = Constraint::Row { row: row as u8, value: value };
                 if solved_constraints.contains(&cons_r) { continue; }
@@ -81,11 +89,15 @@ fn unpack(display: &str) -> (Vec<(u8, u8, u8)>,
 }
 
 
-fn pack(state: &Vec<(u8, u8, u8)>) -> Vec<String> {
+fn pack(state: &Vec<SquareChoice>) -> Vec<String> {
     let mut output = [['.'; 9]; 9];
 
-    for &(row, col, value) in state {
-        output[row as usize][col as usize] = match char::from_digit(value as u32, 10) {
+    for choice in state {
+        let row = choice.row as usize;
+        let col = choice.col as usize;
+        let value = choice.value as u32;
+
+        output[row][col] = match char::from_digit(value, 10) {
             Some(c) => c,
             None    => continue,
         };
@@ -101,8 +113,8 @@ fn pack(state: &Vec<(u8, u8, u8)>) -> Vec<String> {
 
 fn cover(header: Constraint,
          constraints: &mut HashMap<Constraint,
-                                   HashSet<(u8, u8, u8)>>)
-         -> HashMap<(u8, u8, u8), Vec<Constraint>> {
+                                   HashSet<SquareChoice>>)
+         -> HashMap<SquareChoice, Vec<Constraint>> {
     let column = constraints.remove(&header).unwrap();
 
     let mut removals = HashMap::new();
@@ -121,9 +133,9 @@ fn cover(header: Constraint,
 
 
 fn uncover(header: Constraint,
-           removals: &HashMap<(u8, u8, u8), Vec<Constraint>>,
+           removals: &HashMap<SquareChoice, Vec<Constraint>>,
            constraints: &mut HashMap<Constraint,
-                                     HashSet<(u8, u8, u8)>>) {
+                                     HashSet<SquareChoice>>) {
     for (choice, headers) in removals.iter() {
         constraints.entry(header)
                    .or_insert(HashSet::new())
@@ -138,7 +150,8 @@ fn uncover(header: Constraint,
 
 
 fn most_constrained(constraints: &HashMap<Constraint,
-                                          HashSet<(u8, u8, u8)>>) -> Constraint {
+                                          HashSet<SquareChoice>>)
+                    -> Constraint {
     let (header, _) = constraints.iter()
                                  .min_by_key(|x| x.1.len())
                                  .unwrap();
@@ -146,9 +159,9 @@ fn most_constrained(constraints: &HashMap<Constraint,
 }
 
 
-fn solve(state: &mut Vec<(u8, u8, u8)>,
+fn solve(state: &mut Vec<SquareChoice>,
          constraints: &mut HashMap<Constraint,
-                                   HashSet<(u8, u8, u8)>>)
+                                   HashSet<SquareChoice>>)
          -> bool {
 
     if constraints.is_empty() { return true; }
