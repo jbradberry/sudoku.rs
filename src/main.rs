@@ -152,10 +152,10 @@ fn uncover(header: Constraint,
 fn most_constrained(constraints: &HashMap<Constraint,
                                           HashSet<SquareChoice>>)
                     -> Constraint {
-    let (header, _) = constraints.iter()
-                                 .min_by_key(|x| x.1.len())
-                                 .unwrap();
-    *header
+    let (&header, _) = constraints.iter()
+                                  .min_by_key(|x| x.1.len())
+                                  .unwrap();
+    header
 }
 
 
