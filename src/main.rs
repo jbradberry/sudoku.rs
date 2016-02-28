@@ -53,17 +53,17 @@ fn unpack(display: &str) -> (Vec<SquareChoice>,
             for value in 1..10u8 {
                 let choice = SquareChoice { row: row, col: col, value: value };
 
-                let cons_r = Constraint::Row { row: row as u8, value: value };
+                let cons_r = Constraint::Row { row: row, value: value };
                 if solved_constraints.contains(&cons_r) { continue; }
 
-                let cons_c = Constraint::Column { col: col as u8, value: value };
+                let cons_c = Constraint::Column { col: col, value: value };
                 if solved_constraints.contains(&cons_c) { continue; }
 
                 let b = 3 * (row / 3) + (col / 3);
-                let cons_b = Constraint::Block { block: b as u8, value: value };
+                let cons_b = Constraint::Block { block: b, value: value };
                 if solved_constraints.contains(&cons_b) { continue; }
 
-                let cons_s = Constraint::Square { row: row as u8, col: col as u8 };
+                let cons_s = Constraint::Square { row: row, col: col };
                 if solved_constraints.contains(&cons_s) { continue; }
 
                 constraints.entry(cons_r)
