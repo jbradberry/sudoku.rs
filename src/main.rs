@@ -115,11 +115,16 @@ fn cover(header: Constraint,
          constraints: &mut HashMap<Constraint,
                                    HashSet<SquareChoice>>)
          -> Vec<(SquareChoice, Vec<Constraint>)> {
+    // column is a HashSet<SquareChoice>
     let column = constraints.remove(&header).unwrap();
 
     let mut removals = Vec::new();
+
+    // destructively iterate over column
     for row in column {
         let mut row_removal = Vec::new();
+
+        // using the implicit .into_iter would move our constraints ref
         for (other_header, other_col) in constraints.iter_mut() {
             if other_col.remove(&row) {
                 row_removal.push(other_header.clone());
@@ -136,6 +141,7 @@ fn uncover(header: Constraint,
            removals: Vec<(SquareChoice, Vec<Constraint>)>,
            constraints: &mut HashMap<Constraint,
                                      HashSet<SquareChoice>>) {
+    // uncover is the end of life for 'removals', so it's ok that it was moved
     for (choice, headers) in removals {
         constraints.entry(header)
                    .or_insert(HashSet::new())
