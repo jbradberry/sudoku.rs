@@ -114,18 +114,18 @@ fn pack(state: &Vec<SquareChoice>) -> Vec<String> {
 fn cover(header: Constraint,
          constraints: &mut HashMap<Constraint,
                                    HashSet<SquareChoice>>)
-         -> HashMap<SquareChoice, Vec<Constraint>> {
+         -> Vec<(SquareChoice, Vec<Constraint>)> {
     let column = constraints.remove(&header).unwrap();
 
-    let mut removals = HashMap::new();
+    let mut removals = Vec::new();
     for row in column {
+        let mut row_removal = Vec::new();
         for (other_header, other_col) in constraints.iter_mut() {
             if other_col.remove(&row) {
-                removals.entry(row)
-                        .or_insert(Vec::new())
-                        .push(other_header.clone());
+                row_removal.push(other_header.clone());
             }
         }
+        removals.push((row, row_removal));
     }
 
     removals
@@ -133,17 +133,17 @@ fn cover(header: Constraint,
 
 
 fn uncover(header: Constraint,
-           removals: &HashMap<SquareChoice, Vec<Constraint>>,
+           removals: Vec<(SquareChoice, Vec<Constraint>)>,
            constraints: &mut HashMap<Constraint,
                                      HashSet<SquareChoice>>) {
-    for (choice, headers) in removals.iter() {
+    for (choice, headers) in removals {
         constraints.entry(header)
                    .or_insert(HashSet::new())
-                   .insert(*choice);
+                   .insert(choice);
         for other_header in headers {
-            constraints.entry(*other_header)
+            constraints.entry(other_header)
                        .or_insert(HashSet::new())
-                       .insert(*choice);
+                       .insert(choice);
         }
     }
 }
@@ -170,26 +170,27 @@ fn solve(state: &mut Vec<SquareChoice>,
 
     let removals = cover(header, constraints);
 
-    for (row, other_headers) in removals.iter() {
-        state.push(*row);
+    for &(row, ref other_headers) in &removals {
+        state.push(row);
 
-        let mut row_removals = HashMap::new();
-        for h in other_headers.iter() {
+        let mut row_removals = Vec::new();
+
+        for h in other_headers {
             if constraints.contains_key(h) {
-                row_removals.insert(h, cover(h.clone(), constraints));
+                row_removals.push((*h, cover(*h, constraints)));
             }
         }
 
         if solve(state, constraints) { return true; }
 
-        for (h, r) in &row_removals {
-            uncover(**h, r, constraints);
+        for &(h, ref r) in &row_removals {
+            uncover(h, r.clone(), constraints);
         }
 
         state.pop();
     }
 
-    uncover(header, &removals, constraints);
+    uncover(header, removals, constraints);
 
     false
 }
