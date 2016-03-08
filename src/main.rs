@@ -28,7 +28,7 @@ struct Row {
 
 
 fn unpack(display: &str) -> (Vec<SquareChoice>,
-                             HashMap<Constraint, HashSet<SquareChoice>>) {
+                             HashMap<Constraint, Vec<SquareChoice>>) {
     let mut state = Vec::new();
     let mut solved_constraints = HashSet::new();
     let mut constraints = HashMap::new();
@@ -73,20 +73,20 @@ fn unpack(display: &str) -> (Vec<SquareChoice>,
                 if solved_constraints.contains(&cons_s) { continue; }
 
                 constraints.entry(cons_r)
-                           .or_insert(HashSet::new())
-                           .insert(choice);
+                           .or_insert(Vec::new())
+                           .push(choice);
 
                 constraints.entry(cons_c)
-                           .or_insert(HashSet::new())
-                           .insert(choice);
+                           .or_insert(Vec::new())
+                           .push(choice);
 
                 constraints.entry(cons_b)
-                           .or_insert(HashSet::new())
-                           .insert(choice);
+                           .or_insert(Vec::new())
+                           .push(choice);
 
                 constraints.entry(cons_s)
-                           .or_insert(HashSet::new())
-                           .insert(choice);
+                           .or_insert(Vec::new())
+                           .push(choice);
             }
         }
     }
@@ -119,7 +119,7 @@ fn pack(state: &Vec<SquareChoice>) -> Vec<String> {
 
 fn cover(header: Constraint,
          constraints: &mut HashMap<Constraint,
-                                   HashSet<SquareChoice>>)
+                                   Vec<SquareChoice>>)
          -> Vec<Row> {
     // column is a HashSet<SquareChoice>
     let column = constraints.remove(&header).unwrap();
@@ -132,7 +132,11 @@ fn cover(header: Constraint,
 
         // using the implicit .into_iter would move our constraints ref
         for (other_header, other_col) in constraints.iter_mut() {
-            if other_col.remove(&row.choice) {
+            let length = other_col.len();
+
+            other_col.retain(|item| item != &row.choice);
+
+            if other_col.len() != length {
                 row.headers.push(other_header.clone());
             }
         }
@@ -146,22 +150,22 @@ fn cover(header: Constraint,
 fn uncover(header: Constraint,
            removals: &Vec<Row>,
            constraints: &mut HashMap<Constraint,
-                                     HashSet<SquareChoice>>) {
+                                     Vec<SquareChoice>>) {
     for row in removals {
         constraints.entry(header)
-                   .or_insert(HashSet::new())
-                   .insert(row.choice);
+                   .or_insert(Vec::new())
+                   .push(row.choice);
         for &other_header in row.headers.iter() {
             constraints.entry(other_header)
-                       .or_insert(HashSet::new())
-                       .insert(row.choice);
+                       .or_insert(Vec::new())
+                       .push(row.choice);
         }
     }
 }
 
 
 fn most_constrained(constraints: &HashMap<Constraint,
-                                          HashSet<SquareChoice>>)
+                                          Vec<SquareChoice>>)
                     -> Constraint {
     let (&header, _) = constraints.iter()
                                   .min_by_key(|x| x.1.len())
@@ -172,7 +176,7 @@ fn most_constrained(constraints: &HashMap<Constraint,
 
 fn solve(state: &mut Vec<SquareChoice>,
          constraints: &mut HashMap<Constraint,
-                                   HashSet<SquareChoice>>)
+                                   Vec<SquareChoice>>)
          -> bool {
 
     if constraints.is_empty() { return true; }
